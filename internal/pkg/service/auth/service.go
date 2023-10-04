@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -79,6 +80,7 @@ func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
 	// Decoding response
 	decoder := json.NewDecoder(resp.Body)
 	response := &entity.SignWithCustomTokenResp{}
+	fmt.Println("ID: ", response.LocalID)
 
 	err = decoder.Decode(response)
 	return response.LocalID, err

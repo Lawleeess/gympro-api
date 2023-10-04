@@ -18,6 +18,6 @@ func RegisterRoutes(e *gin.Engine) {
 	userService := user.NewUserService(repo, authSvc)
 	authHandler := newHandler(userService)
 
-	// authRoutes.POST("/login", authHandler.signInWithPassword)
+	authRoutes.POST("/login", authHandler.signInWithPassword)
 	authRoutes.POST("/signup", authHandler.signUp)
 }

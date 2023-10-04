@@ -34,3 +34,21 @@ func (u *authHandler) signUp(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
 }
+func (u *authHandler) signInWithPassword(c *gin.Context) {
+	var credentials entity.StandardLoginCredentials
+
+	if err := c.Bind(&credentials); err != nil {
+		c.JSON(http.StatusBadRequest, errors.Build(
+			errors.Message("Failed to bind credentials: "+err.Error()),
+		))
+		return
+	}
+
+	authResponse, err := u.userService.SignInWithPass(c, &credentials)
+	if err != nil {
+		errors.JSON(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, authResponse)
+}

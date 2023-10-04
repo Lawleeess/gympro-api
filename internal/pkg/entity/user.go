@@ -9,8 +9,9 @@ type User struct {
 	LastName     string `json:"lastname" binding:"required" firestore:"lastname"`
 	Email        string `json:"email" binding:"required" firestore:"email"`
 	Password     string `json:"password,omitempty" binding:"required" firestore:"-"`
+	PhoneNumber  string `json:"phone_number,omitempty" binding:"required" firestore:"phone_number"`
 	Birthday     string `json:"birthday,omitempty" binding:"required" firestore:"birthday"`
-	Subscription string `json:"subscription,omitempty" binding:"required" firestore:"subscription"`
+	Subscription string `json:"subscription,omitempty" firestore:"subscription"`
 }
 
 // UpdateClientPermissionsReq represents a request to change clientsWithPermissions for a user with an array of ClientsIDsToUpdate entity

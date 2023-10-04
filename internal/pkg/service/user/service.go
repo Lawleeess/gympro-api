@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/mail"
 	"strconv"
+	"time"
 
 	"github.com/CValier/gympro-api/internal/pkg/entity"
 	"github.com/CValier/gympro-api/internal/pkg/ports"
@@ -40,6 +41,12 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 	}
 
 	user.ID = userID
+
+	if user.Subscription == "" {
+		timeNow := time.Now().Format("2006-01-02")
+		// timeNow := strconv.Itoa(time.Now().Year()) + "/" + time.Now().Month().String() + "/" + strconv.Itoa(time.Now().Day())
+		user.Subscription = timeNow
+	}
 
 	// 3. Save user in user's repo.
 	if err := u.repo.AddUser(user); err != nil {
@@ -118,6 +125,7 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 		"subscription": user.Subscription,
 		"fullName":     fmt.Sprintf("%s %s", user.Name, user.LastName),
 		"birthday":     user.Birthday,
+		"phone_number": user.PhoneNumber,
 	}
 	// 5. Gen custom token with claims, info will be provided from the step 2
 	// We need to set those claims for future request, we can read the JWT and get
