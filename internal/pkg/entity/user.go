@@ -12,6 +12,7 @@ type User struct {
 	PhoneNumber  string `json:"phone_number,omitempty" binding:"required" firestore:"phone_number"`
 	Birthday     string `json:"birthday,omitempty" binding:"required" firestore:"birthday"`
 	Subscription string `json:"subscription,omitempty" firestore:"subscription"`
+	Role         string `json:"role,omitempty" firestore:"role"`
 }
 
 // UpdateClientPermissionsReq represents a request to change clientsWithPermissions for a user with an array of ClientsIDsToUpdate entity

@@ -48,6 +48,9 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 		user.Subscription = timeNow
 	}
 
+	if user.Role == "" {
+		user.Role = "user"
+	}
 	// 3. Save user in user's repo.
 	if err := u.repo.AddUser(user); err != nil {
 		return err
@@ -126,6 +129,7 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 		"fullName":     fmt.Sprintf("%s %s", user.Name, user.LastName),
 		"birthday":     user.Birthday,
 		"phone_number": user.PhoneNumber,
+		"role":         user.Role,
 	}
 	// 5. Gen custom token with claims, info will be provided from the step 2
 	// We need to set those claims for future request, we can read the JWT and get
