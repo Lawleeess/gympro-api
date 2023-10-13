@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"mime/multipart"
 
 	"firebase.google.com/go/auth"
 	"github.com/CValier/gympro-api/internal/pkg/entity"
@@ -16,4 +17,5 @@ type AuthProvider interface {
 	VerifyToken(token string) (*auth.Token, error)
 	RevokeUserTokens(userID string) error
 	RemoveUser(idToken string)
+	UpdateUserImage(fileInput multipart.File, userID string) (string, error)
 }

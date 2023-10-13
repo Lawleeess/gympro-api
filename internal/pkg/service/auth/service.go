@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 
@@ -80,7 +80,6 @@ func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
 	// Decoding response
 	decoder := json.NewDecoder(resp.Body)
 	response := &entity.SignWithCustomTokenResp{}
-	fmt.Println("ID: ", response.LocalID)
 
 	err = decoder.Decode(response)
 	return response.LocalID, err
@@ -245,4 +244,8 @@ func (a *authSvc) RemoveUser(idToken string) {
 	client := &http.Client{}
 	resp, _ := client.Do(req)
 	resp.Body.Close()
+}
+
+func (a *authSvc) UpdateUserImage(img multipart.File, userID string) (string, error) {
+	return a.client.UpdateUserImage(img, userID)
 }

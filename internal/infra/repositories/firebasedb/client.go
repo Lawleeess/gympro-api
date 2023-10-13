@@ -2,11 +2,15 @@ package firebasedb
 
 import (
 	"context"
+	"io"
+	"mime/multipart"
 	"sync"
+	"time"
 
 	firebase "firebase.google.com/go"
 	"firebase.google.com/go/auth"
 	"github.com/CValier/gympro-api/internal/pkg/config"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 )
@@ -53,4 +57,51 @@ func (f *firebaseClient) VerifyToken(token string) (*auth.Token, error) {
 // RevokeUserTokens removes all active refresh tokens for a particular user.
 func (f *firebaseClient) RevokeUserTokens(userID string) error {
 	return f.client.RevokeRefreshTokens(context.Background(), userID)
+}
+
+func (f *firebaseClient) UpdateUserImage(fileInput multipart.File, userID string) (string, error) {
+
+	path := "https://firebasestorage.googleapis.com/v0/b/gympro-400622.appspot.com/o/users%2F"
+
+	conf := &firebase.Config{
+		ProjectID:     config.CfgIn.GoogleProjectID,
+		StorageBucket: config.CfgIn.GoogleProjectID + ".appspot.com",
+	}
+	opt := option.WithCredentialsJSON([]byte(config.CfgIn.ServiceCredentialJSON))
+
+	app, err := firebase.NewApp(context.Background(), conf,
+		opt)
+
+	if err != nil {
+		return "", nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*50)
+	defer cancel()
+
+	client, err := app.Storage(ctx)
+	if err != nil {
+		return "", nil
+	}
+
+	bucket, err := client.DefaultBucket()
+	if err != nil {
+		return "", nil
+	}
+	idImg := uuid.New()
+	nameImage := "profile_" + userID + ".png"
+
+	object := bucket.Object("users/" + nameImage)
+	writer := object.NewWriter(ctx)
+	writer.ObjectAttrs.Metadata = map[string]string{"firebaseStorageDownloadTokens": idImg.String()}
+	writer.ObjectAttrs.ContentType = "image/png"
+
+	defer writer.Close()
+
+	if _, err := io.Copy(writer, fileInput); err != nil {
+		return "", nil
+	}
+
+	path += nameImage + "?alt=media&token=" + idImg.String()
+
+	return path, nil
 }

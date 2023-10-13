@@ -2,6 +2,7 @@ package ports
 
 import (
 	"context"
+	"mime/multipart"
 
 	"github.com/CValier/gympro-api/internal/pkg/entity"
 )
@@ -13,6 +14,8 @@ type UsersRepository interface {
 	GetUserByID(userID string) (*entity.User, error)
 	AddUser(user *entity.User) error
 	GetAllUsersCount() (int, error)
+	UpdateUser(userID string, user *entity.User) error
+	UpdateImageUser(userID string, url string) error
 }
 
 // UserService is the signature to perform business logic over the user resource.
@@ -21,4 +24,6 @@ type UserService interface {
 	GetUsers(ctx context.Context) (*entity.UsersResponse, error)
 	GetByID(ctx context.Context, userID string) (*entity.User, error)
 	CreateUser(ctx context.Context, user *entity.User) error
+	UpdateUser(userID string, user *entity.User) error
+	UpdateImageUser(img multipart.File, userID string) error
 }

@@ -14,11 +14,11 @@ func RunServer() {
 
 	server.Use(cors.Middleware(cors.Config{
 		Origins:         "*",
-		Methods:         "GET,POST,DELETE,PUT",
-		RequestHeaders:  "Origin, Authorization, Content-Type, Access-Control-Allow-Origin",
+		Methods:         "GET, PUT, POST, DELETE",
+		RequestHeaders:  "Origin, Authorization, Content-Type",
 		ExposedHeaders:  "",
 		MaxAge:          50 * time.Second,
-		Credentials:     true,
+		Credentials:     false,
 		ValidateHeaders: false,
 	}))
 

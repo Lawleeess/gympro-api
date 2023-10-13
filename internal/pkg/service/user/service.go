@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+	"mime/multipart"
 	"net/mail"
 	"strconv"
 	"time"
@@ -41,6 +42,7 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 	}
 
 	user.ID = userID
+	user.Url = "https://firebasestorage.googleapis.com/v0/b/gympro-400622.appspot.com/o/users%2Fuser_default.png?alt=media&token=f5434b37-9f27-4f1d-9b00-0cbf69f24c2e"
 
 	if user.Subscription == "" {
 		timeNow := time.Now().Format("2006-01-02")
@@ -48,8 +50,12 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 		user.Subscription = timeNow
 	}
 
-	if user.Role == "" {
-		user.Role = "user"
+	if user.Modules == nil {
+		userModule := entity.Module{
+			"name": "userManagement",
+			"role": "viewer",
+		}
+		user.Modules = append(user.Modules, userModule)
 	}
 	// 3. Save user in user's repo.
 	if err := u.repo.AddUser(user); err != nil {
@@ -124,12 +130,12 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 
 	// 4. Set claims(user info encrypted inside the token)
 	claims := map[string]interface{}{
-		"email":        user.Email,
-		"subscription": user.Subscription,
-		"fullName":     fmt.Sprintf("%s %s", user.Name, user.LastName),
-		"birthday":     user.Birthday,
-		"phone_number": user.PhoneNumber,
-		"role":         user.Role,
+		"email":                 user.Email,
+		"subscription":          user.Subscription,
+		"fullName":              fmt.Sprintf("%s %s", user.Name, user.LastName),
+		"birthday":              user.Birthday,
+		"phone_number":          user.PhoneNumber,
+		"modulesWithPermission": user.Modules,
 	}
 	// 5. Gen custom token with claims, info will be provided from the step 2
 	// We need to set those claims for future request, we can read the JWT and get
@@ -153,4 +159,28 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 		RefreshToken: resp.RefreshToken,
 		User:         *user,
 	}, nil
+}
+
+func (u *userSvc) UpdateUser(userID string, user *entity.User) error {
+	errUpdate := u.repo.UpdateUser(userID, user)
+	if errUpdate != nil {
+		return errUpdate
+	}
+
+	return nil
+}
+
+func (u *userSvc) UpdateImageUser(img multipart.File, userID string) error {
+
+	urlImg, err := u.authSvc.UpdateUserImage(img, userID)
+	if err != nil {
+		return err
+	}
+
+	errUpdate := u.repo.UpdateImageUser(userID, urlImg)
+	if errUpdate != nil {
+		return errUpdate
+	}
+
+	return nil
 }

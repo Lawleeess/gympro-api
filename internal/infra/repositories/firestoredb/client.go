@@ -152,3 +152,25 @@ func (f *firestoreClient) GetUsersByPage(offset, limit int64, department, filter
 
 	return users, nil
 }
+
+// UpdateUser update a user from firestore, according to given user id.
+func (f *firestoreClient) UpdateUser(userID string, user *entity.User) error {
+	_, err := f.client.Collection("users").
+		Doc(userID).
+		Set(context.Background(), user)
+	return err
+}
+
+// UpdateUser update a user from firestore, according to given user id.
+func (f *firestoreClient) UpdateImageUser(userID string, url string) error {
+	userDoc := f.client.Collection("users").Doc(userID)
+
+	// Making the update over firestore collection.
+	_, err := userDoc.Update(
+		context.Background(),
+		[]firestore.Update{
+			{Path: "url_image", Value: url},
+		},
+	)
+	return err
+}
