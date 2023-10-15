@@ -51,11 +51,11 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 	}
 
 	if user.Modules == nil {
-		userModule := entity.Module{
-			"name": "userManagement",
+		infoUserModule := entity.Module{
+			"name": "userInfo",
 			"role": "viewer",
 		}
-		user.Modules = append(user.Modules, userModule)
+		user.Modules = append(user.Modules, infoUserModule)
 	}
 	// 3. Save user in user's repo.
 	if err := u.repo.AddUser(user); err != nil {
@@ -130,6 +130,7 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 
 	// 4. Set claims(user info encrypted inside the token)
 	claims := map[string]interface{}{
+		"user_id":               user.ID,
 		"email":                 user.Email,
 		"subscription":          user.Subscription,
 		"fullName":              fmt.Sprintf("%s %s", user.Name, user.LastName),
@@ -183,4 +184,19 @@ func (u *userSvc) UpdateImageUser(img multipart.File, userID string) error {
 	}
 
 	return nil
+}
+
+// VerifyToken virifies if the given token is valid and return its claims.
+func (u *userSvc) VerifyToken(token string) (map[string]interface{}, error) {
+	scope := errors.Operation("authService.VerifyToken")
+
+	authenticatedToken, err := u.authSvc.VerifyToken(token)
+	if err != nil {
+		return nil, errors.Build(
+			scope,
+			errors.Unauthorized,
+			errors.Message("Invalid session"),
+		)
+	}
+	return authenticatedToken.Claims, nil
 }

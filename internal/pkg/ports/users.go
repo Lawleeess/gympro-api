@@ -26,4 +26,5 @@ type UserService interface {
 	CreateUser(ctx context.Context, user *entity.User) error
 	UpdateUser(userID string, user *entity.User) error
 	UpdateImageUser(img multipart.File, userID string) error
+	VerifyToken(token string) (map[string]interface{}, error)
 }

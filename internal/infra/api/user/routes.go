@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/CValier/gympro-api/internal/infra/api/middlewares"
 	"github.com/CValier/gympro-api/internal/infra/repositories/firebasedb"
 	"github.com/CValier/gympro-api/internal/infra/repositories/firestoredb"
 	"github.com/CValier/gympro-api/internal/pkg/service/auth"
@@ -17,6 +18,8 @@ func RegisterRoutes(e *gin.Engine) {
 	authSvc := auth.NewAuthService(authProvider)
 	userService := user.NewUserService(repo, authSvc)
 	authHandler := newHandler(userService)
+
+	authRoutes.Use(middlewares.AuthenticateUser())
 
 	authRoutes.PUT("/image/:user_id", authHandler.updateImageUser)
 	authRoutes.PUT("/:user_id", authHandler.updateUser)
