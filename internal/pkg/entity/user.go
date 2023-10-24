@@ -14,6 +14,28 @@ type User struct {
 	Subscription string                   `json:"subscription,omitempty" firestore:"subscription"`
 	Modules      []map[string]interface{} `json:"modulesWithPermission,omitempty" firestore:"modulesWithPermission"`
 	Url          string                   `json:"url_image,omitempty" firestore:"url_image"`
+	UserRole     string                   `json:"user_role,omitempty" firestore:"user_role"`
+	UserProgress UserProgress             `json:"userProgress,omitempty" firestore:"userProgress"`
+	UserGoals    UserGoals                `json:"userGoals,omitempty" firestore:"userGoals"`
+}
+
+type UserProgress struct {
+	Age      int     `json:"age,omitempty" firestore:"age"`
+	Gender   string  `json:"gender,omitempty" firestore:"gender"`
+	Height   int     `json:"height,omitempty" firestore:"height"`
+	Weight   float64 `json:"weight,omitempty" firestore:"weight"`
+	Activity string  `json:"activity,omitempty" firestore:"activity"`
+	Goal     string  `json:"goal,omitempty" firestore:"goal"`
+}
+
+type UserGoals struct {
+	IMC     string `json:"imc,omitempty" firestore:"imc"`
+	BMR     string `json:"bmr,omitempty" firestore:"bmr"`
+	TDEE    string `json:"tdee,omitempty" firestore:"tdee"`
+	Goal    string `json:"goal,omitempty" firestore:"goal"`
+	Protein string `json:"protein,omitempty" firestore:"protein"`
+	Carbs   string `json:"carbs,omitempty" firestore:"carbs"`
+	Fat     string `json:"fat,omitempty" firestore:"fat"`
 }
 
 // UpdateClientPermissionsReq represents a request to change clientsWithPermissions for a user with an array of ClientsIDsToUpdate entity

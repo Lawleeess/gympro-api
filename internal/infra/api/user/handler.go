@@ -37,6 +37,24 @@ func (u *userHandler) updateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, nil)
 }
 
+func (u *userHandler) saveProgressGoals(c *gin.Context) {
+	userProgress := &entity.UserProgress{}
+
+	if err := c.Bind(&userProgress); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Message": "Invalid format: " + err.Error(),
+		})
+		return
+	}
+	goals, errUpdate := u.userService.SaveUserProgress(c.Param("user_id"), userProgress)
+	if errUpdate != nil {
+		errors.JSON(c, errUpdate)
+		return
+	}
+
+	c.JSON(http.StatusOK, goals)
+}
+
 func (u *userHandler) updateImageUser(c *gin.Context) {
 	file, _, err := c.Request.FormFile("image")
 	if err != nil {

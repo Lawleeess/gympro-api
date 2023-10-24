@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"fmt"
+	"math"
 	"mime/multipart"
 	"net/mail"
 	"strconv"
@@ -43,6 +44,9 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 
 	user.ID = userID
 	user.Url = "https://firebasestorage.googleapis.com/v0/b/gympro-400622.appspot.com/o/users%2Fuser_default.png?alt=media&token=f5434b37-9f27-4f1d-9b00-0cbf69f24c2e"
+	if user.UserRole == "" {
+		user.UserRole = "user"
+	}
 
 	if user.Subscription == "" {
 		timeNow := time.Now().Format("2006-01-02")
@@ -73,7 +77,6 @@ func (u *userSvc) GetByID(ctx context.Context, userID string) (*entity.User, err
 // GetUsers returns users registred in the app.
 func (u *userSvc) GetUsers(ctx context.Context) (*entity.UsersResponse, error) {
 	var offset, limit int64
-	var department, filter string
 
 	// Check if there is a valid page requested by the client.
 	if !utils.IsValidPage(ctx.Value("offset").(string), ctx.Value("limit").(string)) {
@@ -84,14 +87,14 @@ func (u *userSvc) GetUsers(ctx context.Context) (*entity.UsersResponse, error) {
 		limit, _ = strconv.ParseInt(ctx.Value("limit").(string), 10, 64)
 	}
 
-	department = ctx.Value("department").(string)
-	filter = ctx.Value("filter").(string)
+	userRole := ctx.Value("user_role").(string)
+	filter := ctx.Value("filter").(string)
 
 	totalItems, err := u.repo.GetAllUsersCount()
 	if err != nil {
 		return nil, err
 	}
-	items, err := u.repo.GetUsersByPage(offset, limit, department, filter)
+	items, err := u.repo.GetUsersByPage(offset, limit, userRole, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -137,6 +140,10 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 		"birthday":              user.Birthday,
 		"phone_number":          user.PhoneNumber,
 		"modulesWithPermission": user.Modules,
+		"url_image":             user.Url,
+		"user_role":             user.UserRole,
+		"userProgress":          user.UserProgress,
+		"userGoals":             user.UserGoals,
 	}
 	// 5. Gen custom token with claims, info will be provided from the step 2
 	// We need to set those claims for future request, we can read the JWT and get
@@ -199,4 +206,90 @@ func (u *userSvc) VerifyToken(token string) (map[string]interface{}, error) {
 		)
 	}
 	return authenticatedToken.Claims, nil
+}
+
+func (u *userSvc) SaveUserProgress(userID string, userProgress *entity.UserProgress) (*entity.UserGoals, error) {
+	scope := errors.Operation("userServuce.SaveUserProgress")
+
+	err := u.repo.SaveUserProgress(userID, userProgress)
+	if err != nil {
+		return nil, errors.Build(
+			scope,
+			errors.Unauthorized,
+			errors.Message("Error saving user progress"),
+		)
+	}
+
+	userGoals := &entity.UserGoals{}
+
+	userGoals.IMC = fmt.Sprintf("%.2f", userProgress.Weight/(math.Pow((float64(userProgress.Height)*.01), 2)))
+
+	if userProgress.Gender == "hombre" {
+		userGoals.BMR = fmt.Sprintf("%.2f", ((10 * userProgress.Weight) + (float64(6.25) * float64(userProgress.Height)) - float64(5*userProgress.Age) + 5))
+	} else {
+		userGoals.BMR = fmt.Sprintf("%.2f", ((10 * userProgress.Weight) + (float64(6.25) * float64(userProgress.Height)) - float64(5*userProgress.Age) - 161))
+	}
+
+	var bmr, activity, tdee, goal, protein, carbohydrates, fat, userGoal float64
+
+	if bmr, err = strconv.ParseFloat(userGoals.BMR, 64); err != nil {
+		return nil, err
+	}
+
+	if activity, err = strconv.ParseFloat(userProgress.Activity, 64); err != nil {
+		return nil, err
+	}
+
+	userGoals.TDEE = fmt.Sprintf("%.2f", bmr*activity)
+
+	if tdee, err = strconv.ParseFloat(userGoals.TDEE, 64); err != nil {
+		return nil, err
+	}
+
+	if goal, err = strconv.ParseFloat(userProgress.Goal, 64); err != nil {
+		return nil, err
+	}
+
+	userGoals.Goal = fmt.Sprintf("%.2f", tdee*goal)
+
+	if userGoal, err = strconv.ParseFloat(userGoals.Goal, 64); err != nil {
+		return nil, err
+	}
+
+	if userProgress.Goal == "1" { //mantener el peso
+		protein = (userGoal * 0.25) / 4
+		carbohydrates = (userGoal * 0.5) / 4
+		fat = (userGoal * 0.25) / 9
+	} else if userProgress.Goal == "1.21" { //aumentar peso
+		protein = (userGoal * 0.35) / 4
+		carbohydrates = (userGoal * 0.45) / 4
+		fat = (userGoal * 0.2) / 9
+	} else if userProgress.Goal == "0.79" { //bajar peso
+		protein = (userGoal * 0.45) / 4
+		carbohydrates = (userGoal * 0.35) / 4
+		fat = (userGoal * 0.2) / 9
+	} else if userProgress.Goal == "1.10" { //aumentar peso leve
+		protein = (userGoal * 0.30) / 4
+		carbohydrates = (userGoal * 0.45) / 4
+		fat = (userGoal * 0.25) / 9
+	} else if userProgress.Goal == "0.9" { //bajar peso leve
+		protein = (userGoal * 0.40) / 4
+		carbohydrates = (userGoal * 0.35) / 4
+		fat = (userGoal * 0.25) / 9
+	}
+
+	userGoals.Protein = fmt.Sprintf("%.2f", protein)
+	userGoals.Carbs = fmt.Sprintf("%.2f", carbohydrates)
+	userGoals.Fat = fmt.Sprintf("%.2f", fat)
+
+	err2 := u.repo.SaveUserGoals(userID, userGoals)
+	if err2 != nil {
+		return nil, errors.Build(
+			scope,
+			errors.Unauthorized,
+			errors.Message("Error saving user goals"),
+		)
+	}
+
+	return userGoals, nil
 }

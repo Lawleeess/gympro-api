@@ -2,6 +2,7 @@ package firestoredb
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"cloud.google.com/go/firestore"
@@ -120,7 +121,7 @@ func (f *firestoreClient) GetAllUsersCount() (int, error) {
 }
 
 // GetAllUsers returns documents from the users collection between the offset and limit params.
-func (f *firestoreClient) GetUsersByPage(offset, limit int64, department, filter string) ([]*entity.User, error) {
+func (f *firestoreClient) GetUsersByPage(offset, limit int64, userRole, filter string) ([]*entity.User, error) {
 	var users []*entity.User
 	query := f.client.Collection("users").OrderBy("name", firestore.Asc).Offset(int(offset)).Limit(int(limit))
 	iter := query.Documents(context.Background())
@@ -150,6 +151,14 @@ func (f *firestoreClient) GetUsersByPage(offset, limit int64, department, filter
 		users = append(users, user)
 	}
 
+	if userRole != "" {
+		users = f.userRole(users, userRole)
+	}
+
+	if filter != "" {
+		users = f.useFilter(users, filter)
+	}
+
 	return users, nil
 }
 
@@ -161,7 +170,7 @@ func (f *firestoreClient) UpdateUser(userID string, user *entity.User) error {
 	return err
 }
 
-// UpdateUser update a user from firestore, according to given user id.
+// UpdateImageUser update a user from firestore, according to given user id.
 func (f *firestoreClient) UpdateImageUser(userID string, url string) error {
 	userDoc := f.client.Collection("users").Doc(userID)
 
@@ -172,5 +181,54 @@ func (f *firestoreClient) UpdateImageUser(userID string, url string) error {
 			{Path: "url_image", Value: url},
 		},
 	)
+	return err
+}
+
+func (f *firestoreClient) userRole(users []*entity.User, FilterValue string) []*entity.User {
+	newUsers := []*entity.User{}
+	for _, v := range users {
+		if v.UserRole == FilterValue {
+			newUsers = append(newUsers, v)
+		}
+	}
+	return newUsers
+}
+
+func (f *firestoreClient) useFilter(users []*entity.User, FilterValue string) []*entity.User {
+	newUsers := []*entity.User{}
+	for _, v := range users {
+		if strings.Contains(strings.ToLower(v.Name), strings.ToLower(FilterValue)) ||
+			strings.Contains(strings.ToLower(v.Email), strings.ToLower(FilterValue)) ||
+			strings.Contains(strings.ToLower(v.LastName), strings.ToLower(FilterValue)) {
+			newUsers = append(newUsers, v)
+		}
+	}
+	return newUsers
+}
+
+func (f *firestoreClient) SaveUserProgress(userID string, userProgress *entity.UserProgress) error {
+	userDoc := f.client.Collection("users").Doc(userID)
+
+	// Making the update over firestore collection.
+	_, err := userDoc.Update(
+		context.Background(),
+		[]firestore.Update{
+			{Path: "userProgress", Value: userProgress},
+		},
+	)
+	return err
+}
+
+func (f *firestoreClient) SaveUserGoals(userID string, userGoals *entity.UserGoals) error {
+	userDoc := f.client.Collection("users").Doc(userID)
+
+	// Making the update over firestore collection.
+	_, err := userDoc.Update(
+		context.Background(),
+		[]firestore.Update{
+			{Path: "userGoals", Value: userGoals},
+		},
+	)
+
 	return err
 }
