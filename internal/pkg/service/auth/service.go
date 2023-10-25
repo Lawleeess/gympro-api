@@ -249,3 +249,7 @@ func (a *authSvc) RemoveUser(idToken string) {
 func (a *authSvc) UpdateUserImage(img multipart.File, userID string) (string, error) {
 	return a.client.UpdateUserImage(img, userID)
 }
+
+func (a *authSvc) UpdateRoutineImage(img multipart.File, id string) (string, error) {
+	return a.client.UpdateRoutineImage(img, id)
+}

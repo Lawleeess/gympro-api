@@ -232,3 +232,58 @@ func (f *firestoreClient) SaveUserGoals(userID string, userGoals *entity.UserGoa
 
 	return err
 }
+
+func (f *firestoreClient) AddRoutine(routine *entity.Routine) error {
+	_, err := f.client.Collection("routines").Doc(routine.ID).Set(context.Background(), routine)
+	return err
+}
+
+func (f *firestoreClient) UpdateImageRoutine(id string, url string) error {
+
+	id, err := f.GetIdRoutine(id)
+	if err != nil {
+		return err
+	}
+
+	routineDoc := f.client.Collection("routines").Doc(id)
+
+	// Making the update over firestore collection.
+	_, err2 := routineDoc.Update(
+		context.Background(),
+		[]firestore.Update{
+			{Path: "url_image", Value: url},
+		},
+	)
+
+	return err2
+}
+
+func (f *firestoreClient) GetIdRoutine(id string) (string, error) {
+	user := &entity.User{}
+
+	routinesCollection := f.client.Collection("routines")
+
+	// Creating the query
+	query := routinesCollection.Where("id", "==", id)
+
+	iter := query.Documents(context.Background())
+	defer iter.Stop()
+
+	// Reading the response query
+	doc, err := iter.Next()
+	if err != nil {
+		return "", errors.Build(
+			errors.NotFound,
+			errors.Message(err.Error()),
+		)
+	}
+
+	if err := doc.DataTo(user); err != nil {
+		logrus.Error("firestoredb.GetUserByEmail, Failed to decode user: " + err.Error())
+		return "", errors.Build(
+			errors.InternalError,
+		)
+	}
+
+	return doc.Ref.ID, nil
+}

@@ -18,6 +18,10 @@ type UsersRepository interface {
 	SaveUserProgress(userID string, userProgress *entity.UserProgress) error
 	SaveUserGoals(userID string, userGoals *entity.UserGoals) error
 	UpdateImageUser(userID string, url string) error
+
+	//Routine
+	AddRoutine(routine *entity.Routine) error
+	UpdateImageRoutine(id string, url string) error
 }
 
 // UserService is the signature to perform business logic over the user resource.

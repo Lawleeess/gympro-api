@@ -18,4 +18,5 @@ type AuthProvider interface {
 	RevokeUserTokens(userID string) error
 	RemoveUser(idToken string)
 	UpdateUserImage(fileInput multipart.File, userID string) (string, error)
+	UpdateRoutineImage(img multipart.File, id string) (string, error)
 }

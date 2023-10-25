@@ -12,4 +12,5 @@ type FirebaseCli interface {
 	VerifyToken(token string) (*auth.Token, error)
 	RevokeUserTokens(userID string) error
 	UpdateUserImage(fileInput multipart.File, userID string) (string, error)
+	UpdateRoutineImage(fileInput multipart.File, id string) (string, error)
 }
