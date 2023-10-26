@@ -144,6 +144,7 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 		"user_role":             user.UserRole,
 		"userProgress":          user.UserProgress,
 		"userGoals":             user.UserGoals,
+		"userRoutine":           user.UserRoutine,
 	}
 	// 5. Gen custom token with claims, info will be provided from the step 2
 	// We need to set those claims for future request, we can read the JWT and get
@@ -292,4 +293,8 @@ func (u *userSvc) SaveUserProgress(userID string, userProgress *entity.UserProgr
 	}
 
 	return userGoals, nil
+}
+
+func (u *userSvc) AddRoutineToUser(userID string, userRoutine *entity.UserRoutine) error {
+	return u.repo.AddRoutineToUser(userID, userRoutine)
 }

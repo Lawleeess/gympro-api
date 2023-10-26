@@ -24,4 +24,5 @@ func RegisterRoutes(e *gin.Engine) {
 	userRoutes.PUT("/image/:user_id", authHandler.updateImageUser)
 	userRoutes.PUT("/:user_id", authHandler.updateUser)
 	userRoutes.POST("/goals/:user_id", authHandler.saveProgressGoals)
+	userRoutes.POST("/routines/:user_id", authHandler.saveRoutines)
 }

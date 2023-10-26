@@ -287,3 +287,17 @@ func (f *firestoreClient) GetIdRoutine(id string) (string, error) {
 
 	return doc.Ref.ID, nil
 }
+
+func (f *firestoreClient) AddRoutineToUser(userID string, userRoutine *entity.UserRoutine) error {
+	routineDoc := f.client.Collection("users").Doc(userID)
+
+	// Making the update over firestore collection.
+	_, err := routineDoc.Update(
+		context.Background(),
+		[]firestore.Update{
+			{Path: "userRoutine", Value: userRoutine.Weekday},
+		},
+	)
+
+	return err
+}

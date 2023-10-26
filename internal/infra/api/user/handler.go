@@ -72,3 +72,22 @@ func (u *userHandler) updateImageUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
 }
+
+func (u *userHandler) saveRoutines(c *gin.Context) {
+	userRoutine := &entity.UserRoutine{}
+
+	if err := c.Bind(&userRoutine); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"Message": "Invalid format: " + err.Error(),
+		})
+		return
+	}
+
+	err := u.userService.AddRoutineToUser(c.Param("user_id"), userRoutine)
+	if err != nil {
+		errors.JSON(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}

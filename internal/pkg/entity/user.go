@@ -4,19 +4,20 @@ type Module map[string]interface{}
 
 // User represents an EPA user.
 type User struct {
-	ID           string                   `json:"id,omitempty" firestore:"-"`
-	Name         string                   `json:"name,omitempty" firestore:"name"`
-	LastName     string                   `json:"lastname,omitempty" firestore:"lastname"`
-	Email        string                   `json:"email,omitempty" firestore:"email"`
-	Password     string                   `json:"password,omitempty" firestore:"-"`
-	PhoneNumber  string                   `json:"phone_number,omitempty" firestore:"phone_number"`
-	Birthday     string                   `json:"birthday,omitempty" firestore:"birthday"`
-	Subscription string                   `json:"subscription,omitempty" firestore:"subscription"`
-	Modules      []map[string]interface{} `json:"modulesWithPermission,omitempty" firestore:"modulesWithPermission"`
-	Url          string                   `json:"url_image,omitempty" firestore:"url_image"`
-	UserRole     string                   `json:"user_role,omitempty" firestore:"user_role"`
-	UserProgress UserProgress             `json:"userProgress,omitempty" firestore:"userProgress"`
-	UserGoals    UserGoals                `json:"userGoals,omitempty" firestore:"userGoals"`
+	ID           string                              `json:"id,omitempty" firestore:"-"`
+	Name         string                              `json:"name,omitempty" firestore:"name"`
+	LastName     string                              `json:"lastname,omitempty" firestore:"lastname"`
+	Email        string                              `json:"email,omitempty" firestore:"email"`
+	Password     string                              `json:"password,omitempty" firestore:"-"`
+	PhoneNumber  string                              `json:"phone_number,omitempty" firestore:"phone_number"`
+	Birthday     string                              `json:"birthday,omitempty" firestore:"birthday"`
+	Subscription string                              `json:"subscription,omitempty" firestore:"subscription"`
+	Modules      []map[string]interface{}            `json:"modulesWithPermission,omitempty" firestore:"modulesWithPermission"`
+	Url          string                              `json:"url_image,omitempty" firestore:"url_image"`
+	UserRole     string                              `json:"user_role,omitempty" firestore:"user_role"`
+	UserProgress UserProgress                        `json:"userProgress,omitempty" firestore:"userProgress"`
+	UserGoals    UserGoals                           `json:"userGoals,omitempty" firestore:"userGoals"`
+	UserRoutine  map[string][]map[string]interface{} `json:"userRoutine,omitempty" firestore:"userRoutine"`
 }
 
 type UserProgress struct {
@@ -52,4 +53,8 @@ type ClientsIDsToUpdate struct {
 type UsersResponse struct {
 	TotalItems int     `json:"totalItems"`
 	Items      []*User `json:"items"`
+}
+
+type UserRoutine struct {
+	Weekday map[string][]map[string]interface{} `json:"userRoutine" firestore:"userRoutine"`
 }

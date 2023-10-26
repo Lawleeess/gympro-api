@@ -22,6 +22,7 @@ type UsersRepository interface {
 	//Routine
 	AddRoutine(routine *entity.Routine) error
 	UpdateImageRoutine(id string, url string) error
+	AddRoutineToUser(userID string, userRoutine *entity.UserRoutine) error
 }
 
 // UserService is the signature to perform business logic over the user resource.
@@ -34,4 +35,7 @@ type UserService interface {
 	SaveUserProgress(userID string, userProgress *entity.UserProgress) (*entity.UserGoals, error)
 	UpdateImageUser(img multipart.File, userID string) error
 	VerifyToken(token string) (map[string]interface{}, error)
+
+	//Routine
+	AddRoutineToUser(userID string, userRoutine *entity.UserRoutine) error
 }
