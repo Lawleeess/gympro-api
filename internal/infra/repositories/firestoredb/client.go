@@ -2,6 +2,7 @@ package firestoredb
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"sync"
 
@@ -295,9 +296,41 @@ func (f *firestoreClient) AddRoutineToUser(userID string, userRoutine *entity.Us
 	_, err := routineDoc.Update(
 		context.Background(),
 		[]firestore.Update{
-			{Path: "userRoutine", Value: userRoutine.Weekday},
+			{Path: "userRoutine", Value: userRoutine},
 		},
 	)
 
 	return err
+}
+
+func (f *firestoreClient) GetRoutines(muscle_group string) ([]entity.Routine, error) {
+
+	routines := []entity.Routine{}
+
+	err2 := f.client.RunTransaction(context.Background(), func(ctx context.Context, tx *firestore.Transaction) error {
+		routinesCollection := f.client.Collection("routines")
+		query := routinesCollection.Where("muscle_group", "==", muscle_group)
+		docs := tx.Documents(query)
+		for {
+			routine := entity.Routine{}
+			d, err2 := docs.Next()
+			if err2 != nil {
+				if err2 == iterator.Done {
+					break
+				}
+
+			}
+			response, _ := json.Marshal(d.Data())
+			json.Unmarshal(response, &routine)
+			routines = append(routines, routine)
+
+		}
+		return nil
+	})
+
+	if err2 != nil {
+		return nil, err2
+	}
+
+	return routines, nil
 }

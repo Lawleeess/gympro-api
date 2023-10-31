@@ -43,3 +43,7 @@ func (u *routineSvc) UpdateRoutineImage(img multipart.File, id string) error {
 
 	return nil
 }
+
+func (u *routineSvc) GetRoutines(muscle_group string) ([]entity.Routine, error) {
+	return u.repo.GetRoutines(muscle_group)
+}

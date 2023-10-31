@@ -55,3 +55,13 @@ func (u *routinesHandler) updateRoutineUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, nil)
 }
+func (u *routinesHandler) getRoutines(c *gin.Context) {
+
+	routines, err := u.routineService.GetRoutines(c.Query("muscle_group"))
+	if err != nil {
+		errors.JSON(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, routines)
+}

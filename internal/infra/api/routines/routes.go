@@ -23,4 +23,6 @@ func RegisterRoutes(e *gin.Engine) {
 
 	routinesRoutes.POST("", authHandler.addRoutine)
 	routinesRoutes.PUT("/image/:id", authHandler.updateRoutineUser)
+	routinesRoutes.GET("", authHandler.getRoutines)
+
 }

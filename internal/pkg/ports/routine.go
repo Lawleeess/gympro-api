@@ -9,4 +9,5 @@ import (
 type RoutineService interface {
 	AddRoutine(routine *entity.Routine) error
 	UpdateRoutineImage(img multipart.File, id string) error
+	GetRoutines(muscle_group string) ([]entity.Routine, error)
 }

@@ -23,6 +23,7 @@ type UsersRepository interface {
 	AddRoutine(routine *entity.Routine) error
 	UpdateImageRoutine(id string, url string) error
 	AddRoutineToUser(userID string, userRoutine *entity.UserRoutine) error
+	GetRoutines(muscle_group string) ([]entity.Routine, error)
 }
 
 // UserService is the signature to perform business logic over the user resource.
