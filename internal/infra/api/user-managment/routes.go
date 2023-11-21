@@ -22,4 +22,6 @@ func RegisterRoutes(e *gin.Engine) {
 	adminMngRoutes.Use(middlewares.AuthenticateUser())
 
 	adminMngRoutes.GET("/users", authHandler.getAllUsers)
+	adminMngRoutes.GET("/users/:user_id", authHandler.getUser)
+	adminMngRoutes.DELETE("/users/:user_id", authHandler.deleteUser)
 }

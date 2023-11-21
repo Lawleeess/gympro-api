@@ -32,3 +32,23 @@ func (u *adminManagmentHandler) getAllUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, users)
 }
+
+func (u *adminManagmentHandler) getUser(c *gin.Context) {
+	users, err := u.userService.GetUserByID(c, c.Param("user_id"))
+	if err != nil {
+		errors.JSON(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
+func (u *adminManagmentHandler) deleteUser(c *gin.Context) {
+	err := u.userService.DeleteUser(c, c.Param("user_id"))
+	if err != nil {
+		errors.JSON(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}

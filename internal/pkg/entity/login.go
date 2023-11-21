@@ -6,6 +6,10 @@ type StandardLoginCredentials struct {
 	Password string `json:"password"`
 }
 
+type DeletedUser struct {
+	LocalId string `json:"localId"`
+}
+
 // AuthResponse represents the output when a user signs in.
 type AuthResponse struct {
 	Token        string `json:"token"`

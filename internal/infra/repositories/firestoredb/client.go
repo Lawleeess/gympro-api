@@ -234,6 +234,19 @@ func (f *firestoreClient) SaveUserGoals(userID string, userGoals *entity.UserGoa
 	return err
 }
 
+// DeleteUser removes the given user from the users collection.
+func (f *firestoreClient) DeleteUser(userID string) error {
+	_, err := f.client.Collection("users").Doc(userID).Delete(context.Background())
+	if err != nil {
+		return errors.Build(
+			errors.Operation("firestoredb.DeleteUser"),
+			errors.InternalError,
+			errors.Message("Failed to remove user: "+err.Error()),
+		)
+	}
+	return nil
+}
+
 func (f *firestoreClient) AddRoutine(routine *entity.Routine) error {
 	_, err := f.client.Collection("routines").Doc(routine.ID).Set(context.Background(), routine)
 	return err

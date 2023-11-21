@@ -12,12 +12,12 @@ type User struct {
 	PhoneNumber  string                   `json:"phone_number,omitempty" firestore:"phone_number"`
 	Birthday     string                   `json:"birthday,omitempty" firestore:"birthday"`
 	Subscription string                   `json:"subscription,omitempty" firestore:"subscription"`
-	Modules      []map[string]interface{} `json:"modulesWithPermission,omitempty" firestore:"modulesWithPermission"`
+	Modules      []map[string]interface{} `json:"modulesWithPermission" firestore:"modulesWithPermission"`
 	Url          string                   `json:"url_image,omitempty" firestore:"url_image"`
 	UserRole     string                   `json:"user_role,omitempty" firestore:"user_role"`
 	UserProgress UserProgress             `json:"userProgress,omitempty" firestore:"userProgress"`
 	UserGoals    UserGoals                `json:"userGoals,omitempty" firestore:"userGoals"`
-	UserRoutine  UserRoutine              `json:"userRoutine,omitempty" firestore:"userRoutine"`
+	UserRoutine  UserRoutine              `json:"userRoutine" firestore:"userRoutine"`
 }
 
 type UserProgress struct {
@@ -56,10 +56,10 @@ type UsersResponse struct {
 }
 
 type UserRoutine struct {
-	Monday    []Routine `json:"monday,omitempty" firestore:"monday"`
-	Tuesday   []Routine `json:"tuesday,omitempty" firestore:"tuesday"`
-	Wednesday []Routine `json:"wednesday,omitempty" firestore:"wednesday"`
-	Thursday  []Routine `json:"thursday,omitempty" firestore:"thursday"`
-	Friday    []Routine `json:"friday,omitempty" firestore:"friday"`
-	Saturday  []Routine `json:"saturday,omitempty" firestore:"saturday"`
+	Monday    []Routine `json:"monday" firestore:"monday"`
+	Tuesday   []Routine `json:"tuesday" firestore:"tuesday"`
+	Wednesday []Routine `json:"wednesday" firestore:"wednesday"`
+	Thursday  []Routine `json:"thursday" firestore:"thursday"`
+	Friday    []Routine `json:"friday" firestore:"friday"`
+	Saturday  []Routine `json:"saturday" firestore:"saturday"`
 }

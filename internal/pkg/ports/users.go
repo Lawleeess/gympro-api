@@ -13,6 +13,7 @@ type UsersRepository interface {
 	GetUsersByPage(offset, limit int64, userRole, filter string) ([]*entity.User, error)
 	GetUserByID(userID string) (*entity.User, error)
 	AddUser(user *entity.User) error
+	DeleteUser(userID string) error
 	GetAllUsersCount() (int, error)
 	UpdateUser(userID string, user *entity.User) error
 	SaveUserProgress(userID string, userProgress *entity.UserProgress) error
@@ -30,9 +31,10 @@ type UsersRepository interface {
 type UserService interface {
 	SignInWithPass(ctx context.Context, credentials *entity.StandardLoginCredentials) (*entity.AuthResponse, error)
 	GetUsers(ctx context.Context) (*entity.UsersResponse, error)
-	GetByID(ctx context.Context, userID string) (*entity.User, error)
+	GetUserByID(ctx context.Context, userID string) (*entity.User, error)
 	CreateUser(ctx context.Context, user *entity.User) error
 	UpdateUser(userID string, user *entity.User) error
+	DeleteUser(ctx context.Context, userID string) error
 	SaveUserProgress(userID string, userProgress *entity.UserProgress) (*entity.UserGoals, error)
 	UpdateImageUser(img multipart.File, userID string) error
 	VerifyToken(token string) (map[string]interface{}, error)

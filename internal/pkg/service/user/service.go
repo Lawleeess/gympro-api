@@ -46,6 +46,23 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 	user.Url = "https://firebasestorage.googleapis.com/v0/b/gympro-400622.appspot.com/o/users%2Fuser_default.png?alt=media&token=f5434b37-9f27-4f1d-9b00-0cbf69f24c2e"
 	if user.UserRole == "" {
 		user.UserRole = "user"
+	} else if user.UserRole == "admin" {
+		moduleUserManagement := entity.Module{
+			"name": "userManagement",
+			"role": "viewer",
+		}
+		moduleRoutines := entity.Module{
+			"name": "routinesCalendar",
+			"role": "viewer",
+		}
+		modulePersonalGoals := entity.Module{
+			"name": "personalGoals",
+			"role": "viewer",
+		}
+
+		user.Modules = append(user.Modules, moduleRoutines)
+		user.Modules = append(user.Modules, modulePersonalGoals)
+		user.Modules = append(user.Modules, moduleUserManagement)
 	}
 
 	if user.Subscription == "" {
@@ -54,13 +71,6 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 		user.Subscription = timeNow
 	}
 
-	if user.Modules == nil {
-		infoUserModule := entity.Module{
-			"name": "userInfo",
-			"role": "viewer",
-		}
-		user.Modules = append(user.Modules, infoUserModule)
-	}
 	// 3. Save user in user's repo.
 	if err := u.repo.AddUser(user); err != nil {
 		return err
@@ -70,7 +80,7 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 }
 
 // GetByID returns a user according to given user id.
-func (u *userSvc) GetByID(ctx context.Context, userID string) (*entity.User, error) {
+func (u *userSvc) GetUserByID(ctx context.Context, userID string) (*entity.User, error) {
 	return u.repo.GetUserByID(userID)
 }
 
@@ -162,6 +172,19 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 		logrus.Error("Step 6/7. Failed to SignInWithClaims: " + err.Error())
 		return nil, err
 	}
+
+	curretDayTime := time.Now()
+	curretDay := curretDayTime.Format("2006-01-02")
+	dateCurrent, _ := time.Parse("2006-01-02", curretDay)
+	dateSubs, _ := time.Parse("2006-01-02", user.Subscription)
+
+	if dateSubs.Before(dateCurrent) {
+		x := make([]map[string]interface{}, 0)
+		user.Modules = x
+	}
+
+	u.UpdateUser(user.ID, user)
+
 	// 7. Returning response
 	return &entity.AuthResponse{
 		Token:        resp.Token,
@@ -171,6 +194,31 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 }
 
 func (u *userSvc) UpdateUser(userID string, user *entity.User) error {
+
+	curretDayTime := time.Now()
+	curretDay := curretDayTime.Format("2006-01-02")
+	dateCurrent, _ := time.Parse("2006-01-02", curretDay)
+	dateSubs, _ := time.Parse("2006-01-02", user.Subscription)
+
+	if dateSubs.After(dateCurrent) {
+		moduleUserManagement := entity.Module{
+			"name": "userManagement",
+			"role": "viewer",
+		}
+		moduleRoutines := entity.Module{
+			"name": "routinesCalendar",
+			"role": "viewer",
+		}
+		modulePersonalGoals := entity.Module{
+			"name": "personalGoals",
+			"role": "viewer",
+		}
+
+		user.Modules = append(user.Modules, moduleRoutines)
+		user.Modules = append(user.Modules, modulePersonalGoals)
+		user.Modules = append(user.Modules, moduleUserManagement)
+	}
+
 	errUpdate := u.repo.UpdateUser(userID, user)
 	if errUpdate != nil {
 		return errUpdate
@@ -192,6 +240,21 @@ func (u *userSvc) UpdateImageUser(img multipart.File, userID string) error {
 	}
 
 	return nil
+}
+
+// DeleteUser removes the given user from the app.
+func (u *userSvc) DeleteUser(ctx context.Context, userID string) error {
+	currentUser := ctx.Value("userID").(string)
+
+	// Check if the user making the request is trying to remove himself.
+	if currentUser == userID {
+		return errors.Build(
+			errors.Operation("userService.DeleteUser"),
+			errors.Forbidden,
+			errors.Message("You can't remove your own user."),
+		)
+	}
+	return u.repo.DeleteUser(userID)
 }
 
 // VerifyToken virifies if the given token is valid and return its claims.
