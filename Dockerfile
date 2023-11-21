@@ -7,7 +7,7 @@ ENV GO111MODULE=on
 ENV GOPRIVATE="github.com/Lawleeess/*"
 ADD . /go/src/github.com/Lawleeess/gympro-api
 WORKDIR /go/src/github.com/Lawleeess/gympro-api
-RUN go build -o capi-project
+RUN go build -o gympro-api
 
 FROM alpine
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
@@ -15,4 +15,4 @@ RUN apk --no-cache add tzdata
 COPY --from=build-env /go/src/github.com/Lawleeess/gympro-api/gympro-api /go/gympro-api/gympro-api
 COPY --from=build-env /go/src/github.com/Lawleeess/gympro-api/app.env /app.env
 
-ENTRYPOINT ["/go/capi-project/capi-project"]
+ENTRYPOINT ["/go/gympro/gympro-api"]
