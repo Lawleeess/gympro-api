@@ -1,0 +1,41 @@
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    name: Cloud Run Deployment
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Auth
+        uses: "google-github-actions/auth@v1"
+        with:
+          workload_identity_provider: "projects/1008960578366/locations/global/workloadIdentityPools/github-pool/providers/github-provider"
+          service_account: "gympro@gym-pro-405817.iam.gserviceaccount.com"
+
+      - name: Configure Docker
+        run: |
+          gcloud auth configure-docker
+
+      - name: Build
+        run: |
+          docker build -t gcr.io/gym-pro/gympro-api:latest .
+
+      - name: Push
+        run: |
+          docker push gcr.io/gym-pro/gympro-api:latest
+
+      - name: Deploy
+        run: |
+          gcloud run deploy gympro-api \
+          --region us-central1 \
+          --image gcr.io/gym-pro/gympro-api \
+          --platform managed \
+          --allow-unauthenticated \
+          --project gym-pro-405817
