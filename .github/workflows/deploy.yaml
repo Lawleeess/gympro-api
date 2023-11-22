@@ -25,21 +25,22 @@ jobs:
           
       - name: Build
         run: |
-          docker build . --file Dockerfile -t us-central1-docker.pkg.dev/gym-pro-405817/gympro
+          docker build . --file Dockerfile -t us-central1-docker.pkg.dev/gym-pro-405817/gympro/gympro:latest
 
       - name: AuthDocker
         run: |
           gcloud auth configure-docker \
-              us-central1-docker.pkg.dev
+          us-central1-docker.pkg.dev
+
       - name: Push
         run: |
-          docker push us-central1-docker.pkg.dev/gym-pro-405817/gympro
+          docker push us-central1-docker.pkg.dev/gym-pro-405817/gympro/gympro:latest
 
       - name: Deploy
         run: |
           gcloud run deploy gympro \
           --region us-central1 \
-          --image us-central1-docker.pkg.dev/gym-pro-405817/gympro \
+          --image us-central1-docker.pkg.dev/gym-pro-405817/gympro/gympro \
           --platform managed \
           --allow-unauthenticated \
           --project gym-pro-405817
