@@ -27,10 +27,6 @@ jobs:
         run: |
           docker build . --file Dockerfile -t us-central1-docker.pkg.dev/gym-pro-405817/gympro/gympro:latest
 
-      - name: AuthDocker
-        run: |
-          gcloud auth print-access-token | docker login -u oauth2accesstoken --password-stdin https://us-central1-docker.pkg.dev
-
       - name: Push
         run: |
           docker push us-central1-docker.pkg.dev/gym-pro-405817/gympro/gympro:latest
