@@ -29,8 +29,8 @@ jobs:
 
       - name: AuthDocker
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
-
+          gcloud auth configure-docker \
+              us-central1-docker.pkg.dev
       - name: Push
         run: |
           docker push us-central1-docker.pkg.dev/gym-pro-405817/gympro/gympro:latest
