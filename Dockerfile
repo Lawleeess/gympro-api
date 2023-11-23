@@ -1,17 +1,27 @@
-FROM golang:alpine as build-env
-RUN apk add gcc libc-dev
-RUN apk add --update git
-RUN apk add ca-certificates wget && update-ca-certificates
-RUN git config --global url."https://Lawleeess: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@github.com/".insteadOf "https://github.com/"
-ENV GO111MODULE=on
-ADD . /go/src/github.com/Lawleeess/gympro-api
-WORKDIR /go/src/github.com/Lawleeess/gympro-api
-RUN go build -o gympro-api
+# syntax=docker/dockerfile:1
 
-FROM alpine
-RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
-RUN apk --no-cache add tzdata
-COPY --from=build-env /go/src/github.com/Lawleeess/gympro-api/gympro-api /go/gympro-api/gympro-api
-COPY --from=build-env /go/src/github.com/Lawleeess/gympro-api/app.env /app.env
+FROM golang:1.19
 
-ENTRYPOINT ["/go/gympro/gympro-api"]
+# Set destination for COPY
+WORKDIR /app
+
+# Download Go modules
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy the source code. Note the slash at the end, as explained in
+# https://docs.docker.com/engine/reference/builder/#copy
+COPY *.go ./
+
+# Build
+RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-gs-ping
+
+# Optional:
+# To bind to a TCP port, runtime parameters must be supplied to the docker command.
+# But we can document in the Dockerfile what ports
+# the application is going to listen on by default.
+# https://docs.docker.com/engine/reference/builder/#expose
+EXPOSE 8080
+
+# Run
+CMD ["/docker-gs-ping"]
