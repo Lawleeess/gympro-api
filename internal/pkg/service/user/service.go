@@ -49,26 +49,23 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 	} else if user.UserRole == "admin" {
 		moduleUserManagement := entity.Module{
 			"name": "userManagement",
-			"role": "viewer",
+			"role": "admin",
 		}
-		moduleRoutines := entity.Module{
-			"name": "routinesCalendar",
-			"role": "viewer",
-		}
-		modulePersonalGoals := entity.Module{
-			"name": "personalGoals",
-			"role": "viewer",
+		moduleRoutinesManagement := entity.Module{
+			"name": "routinesManagement",
+			"role": "admin",
 		}
 
-		user.Modules = append(user.Modules, moduleRoutines)
-		user.Modules = append(user.Modules, modulePersonalGoals)
 		user.Modules = append(user.Modules, moduleUserManagement)
+		user.Modules = append(user.Modules, moduleRoutinesManagement)
 	}
 
 	if user.Subscription == "" {
-		timeNow := time.Now().Format("2006-01-02")
+		timeNow := time.Now()
+		yesterday := timeNow.AddDate(0, 0, -1).Format("2006-01-02")
+
 		// timeNow := strconv.Itoa(time.Now().Year()) + "/" + time.Now().Month().String() + "/" + strconv.Itoa(time.Now().Day())
-		user.Subscription = timeNow
+		user.Subscription = yesterday
 	}
 
 	// 3. Save user in user's repo.
@@ -178,12 +175,17 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 	dateCurrent, _ := time.Parse("2006-01-02", curretDay)
 	dateSubs, _ := time.Parse("2006-01-02", user.Subscription)
 
-	if dateSubs.Before(dateCurrent) {
+	if dateSubs.Before(dateCurrent) && user.UserRole != "admin" {
 		x := make([]map[string]interface{}, 0)
 		user.Modules = x
-	}
+		errUpdate := u.repo.UpdateUser(user.ID, user)
+		if errUpdate != nil {
+			return nil, errUpdate
+		}
 
-	u.UpdateUser(user.ID, user)
+	} else if user.Modules == nil {
+		u.UpdateUser(user.ID, user)
+	}
 
 	// 7. Returning response
 	return &entity.AuthResponse{
@@ -200,11 +202,7 @@ func (u *userSvc) UpdateUser(userID string, user *entity.User) error {
 	dateCurrent, _ := time.Parse("2006-01-02", curretDay)
 	dateSubs, _ := time.Parse("2006-01-02", user.Subscription)
 
-	if dateSubs.After(dateCurrent) {
-		moduleUserManagement := entity.Module{
-			"name": "userManagement",
-			"role": "viewer",
-		}
+	if dateSubs.After(dateCurrent) && user.Modules == nil {
 		moduleRoutines := entity.Module{
 			"name": "routinesCalendar",
 			"role": "viewer",
@@ -216,7 +214,6 @@ func (u *userSvc) UpdateUser(userID string, user *entity.User) error {
 
 		user.Modules = append(user.Modules, moduleRoutines)
 		user.Modules = append(user.Modules, modulePersonalGoals)
-		user.Modules = append(user.Modules, moduleUserManagement)
 	}
 
 	errUpdate := u.repo.UpdateUser(userID, user)
@@ -360,4 +357,12 @@ func (u *userSvc) SaveUserProgress(userID string, userProgress *entity.UserProgr
 
 func (u *userSvc) AddRoutineToUser(userID string, userRoutine *entity.UserRoutine) error {
 	return u.repo.AddRoutineToUser(userID, userRoutine)
+}
+
+func (u userSvc) VerifyOrRecoverEmail(ctx context.Context, creds *entity.UserRequestType) (string, error) {
+	return u.authSvc.VerifyOrRecoverEmail(ctx, creds)
+}
+
+func (u userSvc) VerifyOobCode(ctx context.Context, creds *entity.OobCode) (bool, error) {
+	return u.authSvc.VerifyOobCode(ctx, creds)
 }

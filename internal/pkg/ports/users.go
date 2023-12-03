@@ -30,6 +30,9 @@ type UsersRepository interface {
 // UserService is the signature to perform business logic over the user resource.
 type UserService interface {
 	SignInWithPass(ctx context.Context, credentials *entity.StandardLoginCredentials) (*entity.AuthResponse, error)
+	VerifyOrRecoverEmail(ctx context.Context, creds *entity.UserRequestType) (string, error)
+	VerifyOobCode(ctx context.Context, creds *entity.OobCode) (bool, error)
+
 	GetUsers(ctx context.Context) (*entity.UsersResponse, error)
 	GetUserByID(ctx context.Context, userID string) (*entity.User, error)
 	CreateUser(ctx context.Context, user *entity.User) error

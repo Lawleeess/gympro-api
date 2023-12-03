@@ -20,4 +20,7 @@ func RegisterRoutes(e *gin.Engine) {
 
 	authRoutes.POST("/login", authHandler.signInWithPassword)
 	authRoutes.POST("/signup", authHandler.signUp)
+	authRoutes.POST("/verifyEmail", authHandler.VerifyOrRecoverEmail)
+	authRoutes.POST("/sendOobCode", authHandler.VerifyOobCode)
+	authRoutes.POST("/recover", authHandler.VerifyOrRecoverEmail)
 }

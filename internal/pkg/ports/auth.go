@@ -19,4 +19,7 @@ type AuthProvider interface {
 	RemoveUser(idToken string)
 	UpdateUserImage(fileInput multipart.File, userID string) (string, error)
 	UpdateRoutineImage(img multipart.File, id string) (string, error)
+
+	VerifyOrRecoverEmail(ctx context.Context, creds *entity.UserRequestType) (string, error)
+	VerifyOobCode(ctx context.Context, creds *entity.OobCode) (bool, error)
 }

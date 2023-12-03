@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -61,6 +62,8 @@ func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
+	fmt.Println("response: ", resp)
+
 	if err != nil || resp.StatusCode != http.StatusOK {
 		// Decoding response in the proper err struct.
 		dec := json.NewDecoder(resp.Body)
@@ -82,6 +85,8 @@ func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
 	response := &entity.SignWithCustomTokenResp{}
 
 	err = decoder.Decode(response)
+
+	fmt.Println(response.Token)
 	return response.LocalID, err
 }
 
@@ -252,4 +257,151 @@ func (a *authSvc) UpdateUserImage(img multipart.File, userID string) (string, er
 
 func (a *authSvc) UpdateRoutineImage(img multipart.File, id string) (string, error) {
 	return a.client.UpdateRoutineImage(img, id)
+}
+
+// RecoverPass makes a HTTP request to Firebase API to send a password reset email
+// For more details: https://firebase.google.com/docs/reference/rest/auth?hl=en#section-send-password-reset-email
+func (a *authSvc) VerifyOrRecoverEmail(ctx context.Context, creds *entity.UserRequestType) (string, error) {
+	var scope errors.Operation
+	var bodyReq interface{}
+
+	if creds.RequestType == "VERIFY_EMAIL" {
+		scope = errors.Operation("auth_service.VerifyEmail")
+
+		bodyReq = struct {
+			RequestType string `json:"requestType"`
+			IdToken     string `json:"idToken"`
+		}{
+			creds.RequestType,
+			creds.Email,
+		}
+	} else {
+		scope = errors.Operation("auth_service.RecoverPassword")
+
+		credential := entity.StandardLoginCredentials{
+			Email: creds.Email, //email or id
+		}
+
+		bodyReq = struct {
+			entity.StandardLoginCredentials
+			RequestType string `json:"requestType"`
+		}{
+			credential,
+			creds.RequestType,
+		}
+	}
+
+	fmt.Println(bodyReq)
+
+	// Encoding the body payload
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(bodyReq)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(&buf)
+
+	// We need to add the firebase key to the request as url param
+	parm := url.Values{}
+	parm.Add("key", config.CfgIn.FirebaseKey)
+
+	reqURL := config.CfgIn.FirebaseHost + ":sendOobCode?" + parm.Encode()
+
+	// Creating a new request
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, &buf)
+	if err != nil {
+		return "", errors.Build(
+			scope,
+			errors.InternalError,
+			errors.Message("Failed to create a new request: "+err.Error()),
+		)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	fmt.Println(req)
+
+	// Making the http request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return "", errors.Build(
+			scope,
+			errors.NotFound,
+			errors.Message("Invalid email"),
+		)
+	}
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
+	response := entity.StandardLoginCredentials{}
+
+	return response.Email, decoder.Decode(&response)
+}
+
+func (a *authSvc) VerifyOobCode(ctx context.Context, creds *entity.OobCode) (bool, error) {
+	var scope errors.Operation
+	var bodyReq interface{}
+
+	scope = errors.Operation("auth_service.VerifyEmail")
+
+	bodyReq = struct {
+		OobCode string `json:"oobCode"`
+	}{
+		creds.OobCode,
+	}
+
+	fmt.Println(bodyReq)
+
+	// Encoding the body payload
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(bodyReq)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(&buf)
+
+	// We need to add the firebase key to the request as url param
+	parm := url.Values{}
+	parm.Add("key", config.CfgIn.FirebaseKey)
+
+	reqURL := config.CfgIn.FirebaseHost + ":update?" + parm.Encode()
+
+	// Creating a new request
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, &buf)
+	if err != nil {
+		return false, errors.Build(
+			scope,
+			errors.InternalError,
+			errors.Message("Failed to create a new request: "+err.Error()),
+		)
+	}
+	req.Header.Add("Content-Type", "application/json")
+
+	fmt.Println(req)
+
+	// Making the http request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return false, errors.Build(
+			scope,
+			errors.NotFound,
+			errors.Message("Invalid email"),
+		)
+	}
+	defer resp.Body.Close()
+
+	decoder := json.NewDecoder(resp.Body)
+	response := ResponseOobCode{}
+
+	fmt.Println("REsponse: ", response)
+	return response.EmailVerified, decoder.Decode(&response)
+}
+
+type ResponseOobCode struct {
+	LocalID       string `json:"localId"`
+	Email         string `json:"email"`
+	EmailVerified bool   `json:"emailVerified"`
 }

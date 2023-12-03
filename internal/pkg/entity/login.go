@@ -6,6 +6,15 @@ type StandardLoginCredentials struct {
 	Password string `json:"password"`
 }
 
+type UserRequestType struct {
+	Email       string `json:"email"`
+	RequestType string `json:"requestType"`
+}
+
+type OobCode struct {
+	OobCode string `json:"oobCode"`
+}
+
 type DeletedUser struct {
 	LocalId string `json:"localId"`
 }
