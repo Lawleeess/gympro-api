@@ -11,6 +11,7 @@ import (
 type UsersRepository interface {
 	GetUserByEmail(email string) (*entity.User, error)
 	GetUsersByPage(offset, limit int64, userRole, filter string) ([]*entity.User, error)
+	GetUsersByPageActive(offset, limit int64, userRole, filter string) ([]*entity.User, error)
 	GetUserByID(userID string) (*entity.User, error)
 	AddUser(user *entity.User) error
 	DeleteUser(userID string) error
@@ -33,6 +34,7 @@ type UserService interface {
 	VerifyOrRecoverEmail(ctx context.Context, creds *entity.UserRequestType) (string, error)
 	VerifyOobCode(ctx context.Context, creds *entity.OobCode) (bool, error)
 
+	GetUsersActive(ctx context.Context) (*entity.UsersResponse, error)
 	GetUsers(ctx context.Context) (*entity.UsersResponse, error)
 	GetUserByID(ctx context.Context, userID string) (*entity.User, error)
 	CreateUser(ctx context.Context, user *entity.User) error

@@ -18,6 +18,21 @@ func newHandler(service ports.UserService) *adminManagmentHandler {
 	}
 }
 
+func (u *adminManagmentHandler) getAllUsersActive(c *gin.Context) {
+	c.Set("offset", c.Query("offset"))
+	c.Set("limit", c.Query("limit"))
+	c.Set("user_role", c.Query("user_role"))
+	c.Set("filter", c.Query("filter"))
+
+	users, err := u.userService.GetUsersActive(c)
+	if err != nil {
+		errors.JSON(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, users)
+}
+
 func (u *adminManagmentHandler) getAllUsers(c *gin.Context) {
 	c.Set("offset", c.Query("offset"))
 	c.Set("limit", c.Query("limit"))

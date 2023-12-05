@@ -8,7 +8,7 @@ type User struct {
 	Name         string                   `json:"name,omitempty" firestore:"name"`
 	LastName     string                   `json:"lastname,omitempty" firestore:"lastname"`
 	Email        string                   `json:"email,omitempty" firestore:"email"`
-	Password     string                   `json:"password,omitempty" firestore:"-"`
+	Password     string                   `json:"password,omitempty" firestore:"password"`
 	PhoneNumber  string                   `json:"phone_number,omitempty" firestore:"phone_number"`
 	Birthday     string                   `json:"birthday,omitempty" firestore:"birthday"`
 	Subscription string                   `json:"subscription,omitempty" firestore:"subscription"`

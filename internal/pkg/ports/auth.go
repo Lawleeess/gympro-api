@@ -10,7 +10,7 @@ import (
 
 // AuthProvider is the signature to perform auth operations
 type AuthProvider interface {
-	SignInWithPass(ctx context.Context, credentials *entity.StandardLoginCredentials) (string, error)
+	SignInWithPass(ctx context.Context, credentials *entity.StandardLoginCredentials) (*entity.SignWithCustomTokenResp, error)
 	SignUpWithEmailAndPass(email, password string) (string, error) // Returns the id of the created user and error.
 	SignInWithTokenClaims(ctx context.Context, token string) (*entity.SignWithCustomTokenResp, error)
 	GenerateCustomToken(ctx context.Context, userID string, claims map[string]interface{}) (string, error)
@@ -22,4 +22,6 @@ type AuthProvider interface {
 
 	VerifyOrRecoverEmail(ctx context.Context, creds *entity.UserRequestType) (string, error)
 	VerifyOobCode(ctx context.Context, creds *entity.OobCode) (bool, error)
+
+	ExchangeRefreshForIdToken(refreshToken string) *entity.SignWithCustomTokenResp
 }

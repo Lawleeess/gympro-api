@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"strings"
 	"sync"
+	"time"
 
 	"cloud.google.com/go/firestore"
 	"github.com/CValier/gympro-api/internal/pkg/config"
@@ -119,6 +120,49 @@ func (f *firestoreClient) GetAllUsersCount() (int, error) {
 	query := f.client.Collection("users")
 	docs, err := query.Documents(context.Background()).GetAll()
 	return len(docs), err
+}
+
+// GetAllUsers returns documents from the users collection between the offset and limit params.
+func (f *firestoreClient) GetUsersByPageActive(offset, limit int64, userRole, filter string) ([]*entity.User, error) {
+	var users []*entity.User
+	curretDayTime := time.Now()
+	curretDay := curretDayTime.Format("2006-01-02")
+	query := f.client.Collection("users").Where("subscription", ">=", curretDay).OrderBy("subscription", firestore.Asc).Offset(int(offset)).Limit(int(limit))
+	iter := query.Documents(context.Background())
+	defer iter.Stop()
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, errors.Build(
+				errors.Operation("firestoredb.GetAllUsers"),
+				errors.InternalError,
+				errors.Message("Failed to get documents: "+err.Error()),
+			)
+		}
+		user := new(entity.User)
+		if err := doc.DataTo(user); err != nil {
+			return nil, errors.Build(
+				errors.Operation("firestoredb.GetAllUsers"),
+				errors.InternalError,
+				errors.Message("Failed to desirealize obj: "+err.Error()),
+			)
+		}
+		user.ID = doc.Ref.ID
+		users = append(users, user)
+	}
+
+	if userRole != "" {
+		users = f.userRole(users, userRole)
+	}
+
+	if filter != "" {
+		users = f.useFilter(users, filter)
+	}
+
+	return users, nil
 }
 
 // GetAllUsers returns documents from the users collection between the offset and limit params.
