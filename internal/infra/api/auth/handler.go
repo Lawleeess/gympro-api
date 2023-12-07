@@ -28,7 +28,7 @@ func (u *authHandler) signUp(c *gin.Context) {
 	}
 
 	if err := u.userService.CreateUser(c, user); err != nil {
-		errors.JSON(c, err)
+		c.JSON(http.StatusConflict, err)
 		return
 	}
 

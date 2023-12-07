@@ -33,7 +33,7 @@ func NewAuthService(client ports.FirebaseCli) *authSvc {
 // to the Auth signupNewUser endpoint.
 // for more details: https://firebase.google.com/docs/reference/rest/auth?hl=en
 // It returns the id of the created user as string.
-func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
+func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (*entity.SignWithCustomTokenResp, error) {
 	// Creating a body payload to send it to firebase API.
 	bodyReq := entity.StandardLoginCredentials{
 		Email:    email,
@@ -43,7 +43,7 @@ func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
 	// Encoding the body payload
 	body, err := json.Marshal(bodyReq)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// We need to add the firebase key to the request as url param
@@ -55,7 +55,7 @@ func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
 	// Creating a new request
 	req, err := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	req.Header.Add("Content-Type", "application/json")
 
@@ -63,21 +63,26 @@ func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
-	fmt.Println("response: ", resp)
-
 	if err != nil || resp.StatusCode != http.StatusOK {
 		// Decoding response in the proper err struct.
 		dec := json.NewDecoder(resp.Body)
 		response := &entity.FirebaseError{}
 		if err := dec.Decode(response); err != nil {
-			return "", err
+			return nil, err
 		}
 
 		// Check if the error was triggered because the email sent already exists.
 		if resp.StatusCode == http.StatusBadRequest && response.Message == "EMAIL_EXISTS" {
-			return "", err
+			scope := errors.Operation("auth_service.SignUpWithEmailAndPass")
+
+			return nil, errors.Build(
+				scope,
+				errors.InternalError,
+				errors.Message("EMAIL_EXISTS"),
+			)
 		}
-		return "", err
+
+		return nil, err
 	}
 	defer resp.Body.Close()
 
@@ -87,8 +92,7 @@ func (a *authSvc) SignUpWithEmailAndPass(email, pass string) (string, error) {
 
 	err = decoder.Decode(response)
 
-	fmt.Println(response.Token)
-	return response.LocalID, err
+	return response, err
 }
 
 // VerifyToken verifies in Firebase if the given token is valid.
@@ -222,7 +226,7 @@ func (a *authSvc) SignInWithTokenClaims(ctx context.Context, customToken string)
 
 // RemoveUser deletes a user with given token ID.
 // https://firebase.google.com/docs/reference/rest/auth?hl=en#section-delete-account
-func (a *authSvc) RemoveUser(idToken string) {
+func (a *authSvc) RemoveUser(idToken string) error {
 	// Creating a body payload to send it to firebase API.
 	bodyReq := struct {
 		IDToken string `json:"idToken"`
@@ -233,7 +237,7 @@ func (a *authSvc) RemoveUser(idToken string) {
 	// Encoding the body payload
 	body, err := json.Marshal(bodyReq)
 	if err != nil {
-		return
+		return err
 	}
 
 	// We need to add the firebase key to the request as url param
@@ -248,8 +252,48 @@ func (a *authSvc) RemoveUser(idToken string) {
 
 	// Making the http request
 	client := &http.Client{}
-	resp, _ := client.Do(req)
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
 	resp.Body.Close()
+
+	return err
+}
+
+func (a *authSvc) SendVerifyCode(idToken string) error {
+	// Creating a body payload to send it to firebase API.
+	bodyReq := struct {
+		IDToken string `json:"idToken"`
+	}{
+		IDToken: idToken,
+	}
+
+	// Encoding the body payload
+	body, err := json.Marshal(bodyReq)
+	if err != nil {
+		return err
+	}
+
+	// We need to add the firebase key to the request as url param
+	parm := url.Values{}
+	parm.Add("key", config.CfgIn.FirebaseKey)
+
+	reqURL := config.CfgIn.FirebaseHost + ":sendOobCode?" + parm.Encode()
+
+	// Creating a new request
+	req, _ := http.NewRequest(http.MethodPost, reqURL, bytes.NewBuffer(body))
+	req.Header.Add("Content-Type", "application/json")
+
+	// Making the http request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	resp.Body.Close()
+
+	return err
 }
 
 // RemoveUser deletes a user with given token ID.
@@ -267,12 +311,10 @@ func (a *authSvc) ExchangeRefreshForIdToken(refreshToken string) *entity.SignWit
 
 	reqURL := "https://securetoken.googleapis.com/v1/" + "token?" + parm.Encode()
 	encodedData := data.Encode()
-	fmt.Println("encodedData", encodedData)
 
 	// Creating a new request
 	req, _ := http.NewRequest(http.MethodPost, reqURL, strings.NewReader(encodedData))
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	fmt.Println("request: ", req)
 
 	// Making the http request
 	client := &http.Client{}
@@ -282,15 +324,12 @@ func (a *authSvc) ExchangeRefreshForIdToken(refreshToken string) *entity.SignWit
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("response: ", resp.Body)
 	// Decoding response
 	decoder := json.NewDecoder(resp.Body)
-	fmt.Println("decoder: ", decoder)
 	var res map[string]interface{}
 	response := &entity.SignWithCustomTokenResp{}
 
 	decoder.Decode(&res)
-	fmt.Println("response2: ", res)
 
 	return response
 }

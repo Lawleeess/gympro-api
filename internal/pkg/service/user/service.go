@@ -42,7 +42,21 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 		return err
 	}
 
-	user.ID = userID
+	fmt.Println("userID: ", userID)
+
+	cr := &entity.UserRequestType{
+		Email:       userID.Token,
+		RequestType: "VERIFY_EMAIL",
+	}
+
+	a, err := u.authSvc.VerifyOrRecoverEmail(ctx, cr)
+	if err != nil {
+		return nil
+	}
+
+	fmt.Println(a)
+
+	user.ID = userID.LocalID
 	user.Url = "https://firebasestorage.googleapis.com/v0/b/gympro-400622.appspot.com/o/users%2Fuser_default.png?alt=media&token=f5434b37-9f27-4f1d-9b00-0cbf69f24c2e"
 	if user.UserRole == "" {
 		user.UserRole = "user"
@@ -303,10 +317,28 @@ func (u *userSvc) DeleteUser(ctx context.Context, userID string) error {
 			errors.Message("You can't remove your own user."),
 		)
 	}
-	// idToken := u.authSvc.ExchangeRefreshForIdToken("AMf-vBygJdpHC6LupWOHul2Bl6M6lYPqndzBGQ0_o6TM2emt3EbzfV97YughmRRGErFUyTPjS-6bFQZarnUyvda7syCv7oWQYkcDnvSlJHkJuekmq7UyqmQMZlf7oSiaDTrZZB-vRUn1rmNdKcQCPjKdP_7T5-9sFtQbQLq5ytM23cXKol6C8Ec8wLPYPn5pziHAazLX61xYA8YVwlFjT_B7RB0ThHlbLL1KqR6s_wtspEouS6FAmpT9bwpmxeqyUvudfNhIrkZwy4Bq_n-z4UgIH6PLpcoZiBkb7PeTW-pFYRx-lXwl4bUzcNpLYIbJVTItz58JRpHkVAi0p-FUVC4guCOvCcQbgW4DOIgUH_oVs0jkFQDcacFkga10aMv2PRCt0YsIPoaoeFwloE9N6fBRiB3tRH6H5cBBxe3HdPfscsTQDfGybBJqTvtyxQLe_kQQu1TgP9TP8YrwBEa5Ee2cmbMIAIgkQ_pmvdai3IAivnwRXa6g7TW8VaK2z5QW0HPCdbHwpk4FWgVaq7fLKVChLDLpvCOgTDHYfMz0-WY_qYJF2Gp0ZebmNDeYd5I6UFpk_ad3kYWnrIu1lo8yzNmaf7wZD0vxuRAIYeoh00rtIunMAXSGPR7uiU1iLn7Suu2wq21l2f3L9KwMRLjN2o3Ih38hEpPmi_ntG3VHkd92woMVBhCkon3lFGKbjnh0uuFEFYbv89O7nS3_RJwEtdiKZl9m22XqYfrcl7T9LGib9CzfK5nIKTZ87jAggpNVM637lNCLc_PRsWfI86fT1Q_mfkHiFpInN43z-ofXmGD8jlgVEmmLt-y4QmUgFVYeLRwG6q7kVepoed2QFp3RikQc4jUEl_KZiqxdD7h4tNgWsH1_Ifaf_jhLhTBbf_-wntvuQVoa8ca1ngDrzKgW7-QorRod2O3QDKXVtpMREgbBEIHbTPjVZGNZwzMYLyhIj2XKkg3l7cwyk_yLOPGW6GMYUa26nGANDw")
 
-	// fmt.Println(idToken)
-	// u.authSvc.RemoveUser(idToken.Token)
+	user, err := u.repo.GetUserByID(userID)
+	if err != nil {
+		logrus.Error("Failed to get user: " + err.Error())
+		return nil
+	}
+	creds := &entity.StandardLoginCredentials{
+		Email:    user.Email,
+		Password: user.Password,
+	}
+
+	tokenResp, err := u.authSvc.SignInWithPass(ctx, creds)
+	if err != nil {
+		logrus.Error("Failed to get token: " + err.Error())
+		return nil
+	}
+
+	err2 := u.authSvc.RemoveUser(tokenResp.Token)
+	if err2 != nil {
+		logrus.Error("Failed to remove user: " + err.Error())
+		return nil
+	}
 
 	return u.repo.DeleteUser(userID)
 }
