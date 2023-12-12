@@ -53,6 +53,25 @@ func (u *authHandler) signInWithPassword(c *gin.Context) {
 	c.JSON(http.StatusOK, authResponse)
 }
 
+func (u *authHandler) verifyUser(c *gin.Context) {
+	var userVerify entity.UserVerify
+
+	if err := c.Bind(&userVerify); err != nil {
+		c.JSON(http.StatusBadRequest, errors.Build(
+			errors.Message("Failed to bind userVerify: "+err.Error()),
+		))
+		return
+	}
+
+	err := u.userService.VerifyOobCode(c, &userVerify)
+	if err != nil {
+		errors.JSON(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, nil)
+}
+
 func (u *authHandler) VerifyOrRecoverEmail(c *gin.Context) {
 	var credentials entity.UserRequestType
 
@@ -64,25 +83,6 @@ func (u *authHandler) VerifyOrRecoverEmail(c *gin.Context) {
 	}
 
 	_, err := u.userService.VerifyOrRecoverEmail(c, &credentials)
-	if err != nil {
-		errors.JSON(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, nil)
-}
-
-func (u *authHandler) VerifyOobCode(c *gin.Context) {
-	var oobCode entity.OobCode
-
-	if err := c.Bind(&oobCode); err != nil {
-		c.JSON(http.StatusBadRequest, errors.Build(
-			errors.Message("Failed to bind credentials: "+err.Error()),
-		))
-		return
-	}
-
-	_, err := u.userService.VerifyOobCode(c, &oobCode)
 	if err != nil {
 		errors.JSON(c, err)
 		return

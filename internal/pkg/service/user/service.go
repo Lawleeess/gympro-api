@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"math"
 	"mime/multipart"
@@ -14,6 +15,7 @@ import (
 	"github.com/CValier/gympro-api/internal/pkg/utils"
 	"github.com/epa-datos/errors"
 	"github.com/sirupsen/logrus"
+	gomail "gopkg.in/mail.v2"
 )
 
 type userSvc struct {
@@ -31,6 +33,14 @@ func NewUserService(repo ports.UsersRepository, firebAuth ports.AuthProvider) *u
 
 // CreateUser adds a new user to auth provider and users repository.
 func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
+	code := utils.EncodeToString(6)
+	name := user.Name + " " + user.LastName
+
+	user.OobCode = code
+	user.IsVerified = false
+
+	sendEmail(user.Email, code, name)
+
 	// 1. Check if the given email is a valid direction.
 	if _, err := mail.ParseAddress(user.Email); err != nil {
 		return err
@@ -41,20 +51,6 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("userID: ", userID)
-
-	cr := &entity.UserRequestType{
-		Email:       userID.Token,
-		RequestType: "VERIFY_EMAIL",
-	}
-
-	a, err := u.authSvc.VerifyOrRecoverEmail(ctx, cr)
-	if err != nil {
-		return nil
-	}
-
-	fmt.Println(a)
 
 	user.ID = userID.LocalID
 	user.Url = "https://firebasestorage.googleapis.com/v0/b/gympro-400622.appspot.com/o/users%2Fuser_default.png?alt=media&token=f5434b37-9f27-4f1d-9b00-0cbf69f24c2e"
@@ -89,6 +85,37 @@ func (u *userSvc) CreateUser(ctx context.Context, user *entity.User) error {
 	}
 
 	return nil
+}
+
+func sendEmail(email, code, name string) {
+	link := fmt.Sprintf("https://gympro-fronted-btso66yfxa-uc.a.run.app/auth/verify?email=%s&oobCode=%s", email, code)
+	m := gomail.NewMessage()
+
+	// Set E-Mail sender
+	m.SetHeader("From", "gympro.contact@gmail.com")
+
+	// Set E-Mail receivers
+	m.SetHeader("To", email)
+
+	// Set E-Mail subject
+	m.SetHeader("Subject", "Confirma tu dirección de correo electrónico para GymPro")
+
+	// Set E-Mail body. You can set plain text or html with text/html
+	m.SetBody("text/plain", "Hola, "+name+": \n\n Por motivos de seguridad, necesitamos que verifiques tu dirección de correo electrónico antes de continuar en nuestra plataforma. \n Haz clic en el enlace que aparece a continuación para verificar tu cuenta: \n "+link+"\n\n o regresa al sitio e ingresa el siguiente código. \n "+code+"\n\n\n Si no solicitaste la verificación de esta dirección, ignora este correo electrónico.\n\n Gracias. \n\n El equipo de GymPro")
+
+	// Settings for SMTP server
+	d := gomail.NewDialer("smtp.gmail.com", 587, "gympro.contact@gmail.com", "eqwn shgz fixc gqqv")
+
+	// This is only needed when SSL/TLS certificate is not valid on server.
+	// In production this should be set to false.
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	// Now send E-Mail
+	if err := d.DialAndSend(m); err != nil {
+		panic(err)
+	}
+
+	return
 }
 
 // GetByID returns a user according to given user id.
@@ -177,6 +204,15 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 		logrus.Error("Step 2/7. Failed to GetUserByEmail: " + err.Error())
 		return nil, err
 	}
+
+	if !user.IsVerified {
+		return nil, errors.Build(
+			errors.Operation("userService.SignInWithPass"),
+			errors.Forbidden,
+			errors.Message("El usuario no está verificado, verifica tu usuario antes de continuar."),
+		)
+	}
+
 	// 3. In order to persist only one session active
 	// we remove any refresh token that the user may have
 	if err := u.authSvc.RevokeUserTokens(user.ID); err != nil {
@@ -201,7 +237,6 @@ func (u *userSvc) SignInWithPass(c context.Context, creds *entity.StandardLoginC
 	}
 
 	u.repo.UpdateUser(user.ID, user)
-	fmt.Println(tokenResp.RefreshToken)
 	// 5. Gen custom token with claims, info will be provided from the step 2
 	// We need to set those claims for future request, we can read the JWT and get
 	// User's information without requests to firestore
@@ -452,6 +487,34 @@ func (u userSvc) VerifyOrRecoverEmail(ctx context.Context, creds *entity.UserReq
 	return u.authSvc.VerifyOrRecoverEmail(ctx, creds)
 }
 
-func (u userSvc) VerifyOobCode(ctx context.Context, creds *entity.OobCode) (bool, error) {
-	return u.authSvc.VerifyOobCode(ctx, creds)
+func (u userSvc) VerifyOobCode(ctx context.Context, creds *entity.UserVerify) error {
+	scope := errors.Operation("userService.VerifyOobCode")
+
+	user, err := u.repo.GetUserByEmail(creds.Email)
+	if err != nil {
+		return err
+	}
+
+	if creds.OobCode == "" {
+		return errors.Build(
+			scope,
+			errors.Unauthorized,
+			errors.Message("El código está vacío"),
+		)
+	} else if user.OobCode != creds.OobCode {
+		return errors.Build(
+			scope,
+			errors.Unauthorized,
+			errors.Message("El código no es válido o no coincide con el código enviado a tu correo."),
+		)
+	}
+
+	user.IsVerified = true
+
+	err2 := u.repo.UpdateUser(user.ID, user)
+	if err2 != nil {
+		return err2
+	}
+
+	return nil
 }

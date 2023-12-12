@@ -19,8 +19,8 @@ func RegisterRoutes(e *gin.Engine) {
 	authHandler := newHandler(userService)
 
 	authRoutes.POST("/login", authHandler.signInWithPassword)
+	authRoutes.POST("/verify", authHandler.verifyUser)
 	authRoutes.POST("/signup", authHandler.signUp)
 	authRoutes.POST("/verifyEmail", authHandler.VerifyOrRecoverEmail)
-	authRoutes.POST("/sendOobCode", authHandler.VerifyOobCode)
 	authRoutes.POST("/recover", authHandler.VerifyOrRecoverEmail)
 }

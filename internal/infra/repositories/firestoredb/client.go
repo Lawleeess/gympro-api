@@ -3,6 +3,7 @@ package firestoredb
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -127,7 +128,7 @@ func (f *firestoreClient) GetUsersByPageActive(offset, limit int64, userRole, fi
 	var users []*entity.User
 	curretDayTime := time.Now()
 	curretDay := curretDayTime.Format("2006-01-02")
-	query := f.client.Collection("users").Where("subscription", ">=", curretDay).OrderBy("subscription", firestore.Asc).Offset(int(offset)).Limit(int(limit))
+	query := f.client.Collection("users").Where("subscription", ">=", curretDay).Where("isVerified", "==", true).OrderBy("subscription", firestore.Asc).Offset(int(offset)).Limit(int(limit))
 	iter := query.Documents(context.Background())
 	defer iter.Stop()
 	for {
@@ -162,13 +163,14 @@ func (f *firestoreClient) GetUsersByPageActive(offset, limit int64, userRole, fi
 		users = f.useFilter(users, filter)
 	}
 
+	fmt.Println(users)
 	return users, nil
 }
 
 // GetAllUsers returns documents from the users collection between the offset and limit params.
 func (f *firestoreClient) GetUsersByPage(offset, limit int64, userRole, filter string) ([]*entity.User, error) {
 	var users []*entity.User
-	query := f.client.Collection("users").OrderBy("name", firestore.Asc).Offset(int(offset)).Limit(int(limit))
+	query := f.client.Collection("users").Where("isVerified", "==", true).OrderBy("name", firestore.Asc).Offset(int(offset)).Limit(int(limit))
 	iter := query.Documents(context.Background())
 	defer iter.Stop()
 

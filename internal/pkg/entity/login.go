@@ -6,6 +6,11 @@ type StandardLoginCredentials struct {
 	Password string `json:"password"`
 }
 
+type UserVerify struct {
+	Email   string `json:"email"`
+	OobCode string `json:"oobCode"`
+}
+
 type UserRequestType struct {
 	Email       string `json:"email"`
 	RequestType string `json:"requestType"`

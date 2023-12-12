@@ -32,7 +32,7 @@ type UsersRepository interface {
 type UserService interface {
 	SignInWithPass(ctx context.Context, credentials *entity.StandardLoginCredentials) (*entity.AuthResponse, error)
 	VerifyOrRecoverEmail(ctx context.Context, creds *entity.UserRequestType) (string, error)
-	VerifyOobCode(ctx context.Context, creds *entity.OobCode) (bool, error)
+	VerifyOobCode(ctx context.Context, creds *entity.UserVerify) error
 
 	GetUsersActive(ctx context.Context) (*entity.UsersResponse, error)
 	GetUsers(ctx context.Context) (*entity.UsersResponse, error)

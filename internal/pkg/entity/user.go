@@ -5,13 +5,15 @@ type Module map[string]interface{}
 // User represents an EPA user.
 type User struct {
 	ID           string                   `json:"id,omitempty" firestore:"-"`
+	OobCode      string                   `json:"oobCode,omitempty" firestore:"oobCode"`
+	IsVerified   bool                     `json:"isVerified,omitempty" firestore:"isVerified"`
 	Name         string                   `json:"name,omitempty" firestore:"name"`
 	LastName     string                   `json:"lastname,omitempty" firestore:"lastname"`
 	Email        string                   `json:"email,omitempty" firestore:"email"`
 	Password     string                   `json:"password,omitempty" firestore:"password"`
 	PhoneNumber  string                   `json:"phone_number,omitempty" firestore:"phone_number"`
 	Birthday     string                   `json:"birthday,omitempty" firestore:"birthday"`
-	Subscription string                   `json:"subscription,omitempty" firestore:"subscription"`
+	Subscription string                   `json:"subscription" firestore:"subscription"`
 	Modules      []map[string]interface{} `json:"modulesWithPermission" firestore:"modulesWithPermission"`
 	Url          string                   `json:"url_image,omitempty" firestore:"url_image"`
 	UserRole     string                   `json:"user_role,omitempty" firestore:"user_role"`
