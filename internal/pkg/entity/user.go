@@ -5,8 +5,8 @@ type Module map[string]interface{}
 // User represents an EPA user.
 type User struct {
 	ID           string                   `json:"id,omitempty" firestore:"-"`
-	OobCode      string                   `json:"oobCode,omitempty" firestore:"oobCode"`
-	IsVerified   bool                     `json:"isVerified,omitempty" firestore:"isVerified"`
+	OobCode      string                   `json:"oobCode" firestore:"oobCode"`
+	IsVerified   bool                     `json:"isVerified" firestore:"isVerified"`
 	Name         string                   `json:"name,omitempty" firestore:"name"`
 	LastName     string                   `json:"lastname,omitempty" firestore:"lastname"`
 	Email        string                   `json:"email,omitempty" firestore:"email"`
